@@ -6,7 +6,7 @@
 
 int main(void)
 { 
-	int fd = open("/dev/uinput", O_WRONLY);
+	int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 
 	if (fd < 0)
 	{
@@ -52,24 +52,24 @@ int main(void)
 		perror("UI_DEV_CREATE");
 		return 1;
 	}
-
+	
+	sleep(1);
 
 	unsigned input = 0;
 
-
+	struct input_event ev[13];
+	memset(&ev, 0, sizeof ev);
+	
 	while(1)
 	{
 
 		scanf("%u", &input);
+		printf("%u, %u\n", input, input & 1);
 		if ((input & 4096) > 0)
 		{
 			close(fd);
 			return 0;
 		}
-
-		struct input_event ev[13];
-		memset(&ev, 0, sizeof ev);
-
 
 		ev[0].type = EV_KEY;
 		ev[0].code = BTN_B;
@@ -77,47 +77,47 @@ int main(void)
 
 		ev[1].type = EV_KEY;
 		ev[1].code = BTN_Y;
-		ev[1].value = input & 2;
+		ev[1].value = (input & 2) >> 1;
 
 		ev[2].type = EV_KEY;
 		ev[2].code = BTN_SELECT;
-		ev[2].value = input & 4;
+		ev[2].value = (input & 4) >> 2;
 
 		ev[3].type = EV_KEY;
 		ev[3].code = BTN_START;
-		ev[3].value = input & 8;
+		ev[3].value = (input & 8) >> 3;
 
 		ev[4].type = EV_KEY;
 		ev[4].code = BTN_DPAD_UP;
-		ev[4].value = input & 16;
+		ev[4].value = (input & 16) >> 4;
 
 		ev[5].type = EV_KEY;
 		ev[5].code = BTN_DPAD_DOWN;
-		ev[5].value = input & 32;
+		ev[5].value = (input & 32) >> 5;
 
 		ev[6].type = EV_KEY;
 		ev[6].code = BTN_DPAD_LEFT;
-		ev[6].value = input & 64;
+		ev[6].value = (input & 64) >> 6;
 
 		ev[7].type = EV_KEY;
 		ev[7].code = BTN_DPAD_RIGHT;
-		ev[7].value = input & 128;
+		ev[7].value = (input & 128) >> 7;
 
 		ev[8].type = EV_KEY;
 		ev[8].code = BTN_A;
-		ev[8].value = input & 256;
+		ev[8].value = (input & 256) >> 8;
 
 		ev[9].type = EV_KEY;
 		ev[9].code = BTN_X;
-		ev[9].value = input & 512;
+		ev[9].value = (input & 512) >> 9;
 
 		ev[10].type = EV_KEY;
 		ev[10].code = BTN_TL;
-		ev[10].value = input & 1024;
+		ev[10].value = (input & 1024) >> 10;
 
 		ev[11].type = EV_KEY;
 		ev[11].code = BTN_TR;
-		ev[11].value = input & 2048;
+		ev[11].value = (input & 2048) >> 11;
 
 		ev[12].type = EV_SYN;
 		ev[12].code = SYN_REPORT;
