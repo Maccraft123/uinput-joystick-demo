@@ -4,6 +4,21 @@
 #include <fcntl.h>
 #include <linux/uinput.h>
 
+static void setup_abs(int fd, unsigned chan, int min, int max)
+{
+	if (ioctl(fd, UI_SET_ABSBIT, chan))
+		perror("UI_SET_ABSBIT");
+
+	struct uinput_abs_setup s =
+	{
+		.code = chan,
+		.absinfo = { .minimum = min,  .maximum = max },
+	};
+
+	if (ioctl(fd, UI_ABS_SETUP, &s))
+		perror("UI_ABS_SETUP");
+}
+
 int main(void)
 { 
 	int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
@@ -28,6 +43,10 @@ int main(void)
 	ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_DOWN);
 	ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_LEFT);
 	ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_RIGHT);
+	ioctl(fd, UI_SET_EVBIT, EV_ABS);
+
+	setup_abs(fd, ABS_X, -32767, 32767);
+	setup_abs(fd, ABS_Y, -32767, 32767);
 
 	struct uinput_setup setup =
 	{
@@ -52,20 +71,21 @@ int main(void)
 		perror("UI_DEV_CREATE");
 		return 1;
 	}
-	
+
 	sleep(1);
 
 	unsigned input = 0;
+	signed int x;
+	signed int y;
 
-	struct input_event ev[13];
+	struct input_event ev[15];
 	memset(&ev, 0, sizeof ev);
-	
+
 	while(1)
 	{
 
-		scanf("%u", &input);
-		printf("%u, %u\n", input, input & 1);
-		if ((input & 4096) > 0)
+		scanf("%u %i %i", &input, &x, &y);
+		if (input == 123456)
 		{
 			close(fd);
 			return 0;
@@ -119,9 +139,17 @@ int main(void)
 		ev[11].code = BTN_TR;
 		ev[11].value = (input & 2048) >> 11;
 
-		ev[12].type = EV_SYN;
-		ev[12].code = SYN_REPORT;
-		ev[12].value = 0;
+		ev[12].type = EV_ABS;
+		ev[12].code = ABS_X;
+		ev[12].value = x;
+
+		ev[13].type = EV_ABS;
+		ev[13].code = ABS_Y;
+		ev[13].value = y;
+
+		ev[14].type = EV_SYN;
+		ev[14].code = SYN_REPORT;
+		ev[14].value = 0;
 
 		if(write(fd, &ev, sizeof ev) < 0)
 		{
